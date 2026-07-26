@@ -1,0 +1,8 @@
+[build]
+  command = "echo 'No build required'"
+  publish = "docs"
+
+[dev]
+  command = "echo 'Development mode'"
+  port = 8000
+  publish = "docs"
