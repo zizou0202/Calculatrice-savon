@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حاسبة نورين لصابون v6.1</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:'Segoe UI',sans-serif;transition:background .3s;min-height:100vh}
+    body.dark-mode{background:#0f172a;color:#f1f5f9}
+    body.light-mode{background:#f8fafc;color:#0f172a}
+    body.light-mode .bg-slate-900{background:#f1f5f9}
+    body.light-mode .bg-slate-950{background:#e2e8f0}
+    body.light-mode .border-slate-800{border-color:#cbd5e1}
+    body.light-mode .text-slate-400{color:#64748b}
+    .fade-in{animation:fadeIn .4s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .scale-hover{transition:transform .2s}
+    .scale-hover:hover{transform:scale(1.03)}
+    .scale-hover:active{transform:scale(.95)}
+    .progress-bar{height:5px;border-radius:10px;background:#1e293b;overflow:hidden}
+    .progress-bar .fill{height:100%;border-radius:10px;transition:width .8s;background:linear-gradient(90deg,#f59e0b,#f97316)}
+    .star-rating{display:flex;gap:3px;direction:ltr}
+    .star-rating .star{cursor:pointer;font-size:26px;color:#64748b;transition:all .2s}
+    .star-rating .star.active{color:#f59e0b;text-shadow:0 0 12px rgba(245,158,11,.4)}
+    .star-rating .star:hover{transform:scale(1.2)}
+    .temp-indicator{display:inline-block;padding:3px 10px;border-radius:20px;font-weight:700;font-size:12px}
+    .temp-perfect{background:rgba(34,197,94,.2);color:#22c55e;border:1px solid #22c55e}
+    .temp-warm{background:rgba(251,191,36,.2);color:#f59e0b;border:1px solid #f59e0b}
+    .temp-hot{background:rgba(239,68,68,.2);color:#ef4444;border:1px solid #ef4444}
+    .temp-cold{background:rgba(59,130,246,.2);color:#3b82f6;border:1px solid #3b82f6}
+    .tab-content-pane{max-height:75vh;overflow-y:auto;scroll-behavior:smooth}
+    .tab-content-pane::-webkit-scrollbar{width:4px}
+    .tab-content-pane::-webkit-scrollbar-track{background:#1e293b;border-radius:10px}
+    .tab-content-pane::-webkit-scrollbar-thumb{background:#f59e0b;border-radius:10px}
+    .print-only{display:none}
+    .ai-card{background:linear-gradient(135deg,rgba(251,191,36,.06),rgba(251,191,36,.01));border:1px solid rgba(251,191,36,.12);border-radius:1rem;padding:.75rem}
+    .ai-card:hover{border-color:rgba(251,191,36,.3)}
+    .ai-thinking{animation:aiPulse 1.2s ease-in-out infinite}
+    @keyframes aiPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.98)}}
+    .tab-btn{padding:8px 10px!important;font-size:10px!important;min-height:34px;font-weight:700;border-radius:12px!important;flex:1;min-width:50px;transition:all .2s;text-align:center}
+    .tab-btn:active{transform:scale(.95)}
+    input,select,textarea{font-size:12px!important;padding:5px 8px!important;border-radius:12px!important;min-height:32px}
+    input[type="number"]{-moz-appearance:textfield}
+    input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+    .recipe-card{cursor:pointer;transition:all .2s}
+    .recipe-card:hover{transform:translateY(-2px);border-color:#f59e0b}
+    
+    /* ====== دليل الاستخدام ====== */
+    .guide-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
+    .guide-modal.active{display:flex}
+    .guide-content{background:#0f172a;border:1px solid #f59e0b;border-radius:1.5rem;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;padding:1.5rem;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)}
+    .guide-content h2{color:#f59e0b;font-size:1.3rem;font-weight:800;margin-bottom:.5rem}
+    .guide-content .step{display:flex;gap:.75rem;padding:.6rem .8rem;border-radius:.75rem;margin:.4rem 0;transition:all .2s;border:1px solid rgba(251,191,36,.08)}
+    .guide-content .step:hover{background:rgba(251,191,36,.05);border-color:rgba(251,191,36,.2)}
+    .guide-content .step .num{background:#f59e0b;color:#0f172a;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0}
+    .guide-content .step .text{flex:1;font-size:.85rem;line-height:1.5}
+    .guide-content .step .text strong{color:#f59e0b}
+    .guide-close{position:sticky;bottom:0;background:#0f172a;padding:.75rem 0 0;display:flex;gap:.5rem;justify-content:flex-end;border-top:1px solid rgba(251,191,36,.1)}
+    .guide-close button{padding:.5rem 1.5rem;border-radius:.75rem;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s}
+    .btn-guide{border:1px solid #f59e0b;color:#f59e0b;background:transparent}
+    .btn-guide:hover{background:#f59e0b;color:#0f172a}
+    .btn-close-guide{background:#f59e0b;color:#0f172a;border:none}
+    .btn-close-guide:hover{background:#d97706}
+    .guide-content.light{background:#f8fafc;color:#0f172a}
+    .guide-content.light .step{border-color:rgba(245,158,11,.1)}
+    .guide-content.light .step:hover{background:rgba(245,158,11,.05)}
+    .guide-content.light .guide-close{background:#f8fafc}
+    
+    @media(max-width:480px){.tab-content-pane{max-height:65vh}.tab-btn{font-size:8px!important;padding:5px 4px!important;min-width:38px}.guide-content{padding:1rem}}
+    @media print{.no-print{display:none!important}body{background:#fff!important;color:#000!important}}
+  </style>
+</head>
+<body class="dark-mode" id="appBody">
+
+<div class="max-w-6xl mx-auto space-y-3 p-2 sm:p-4 app-main">
+
+<!-- HEADER -->
+<header class="flex flex-col sm:flex-row justify-between items-center border-b border-slate-800 pb-2 gap-2">
+  <div class="text-center sm:text-right space-y-0.5">
+    <h1 class="text-lg sm:text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 flex items-center gap-2">
+      <span>🫧</span> حاسبة نورين لصابون <span class="text-xs text-slate-500 font-normal">v6.1</span>
+    </h1>
+    <p class="text-[10px] text-slate-400">PWA | 50 زيت | حاسبة pH | عطور | مكتبة وصفات</p>
+  </div>
+  <div class="flex items-center gap-2 no-print flex-wrap">
+    <button onclick="openGuide()" class="bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 text-xs rounded-xl px-3 py-2 transition border border-amber-600/30 flex items-center gap-1.5">
+      <i class="fas fa-question-circle"></i> <span>كيف تعمل؟</span>
+    </button>
+    <button onclick="toggleTheme()" id="themeToggle" class="bg-slate-800 hover:bg-slate-700 text-white text-xs rounded-xl px-3 py-2 transition shadow"><i class="fas fa-moon"></i></button>
+    <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-xl px-3 py-2 focus:outline-none shadow">
+      <option value="ar">🇸🇦 العربية</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="en">🇬🇧 English</option>
+    </select>
+    <button onclick="installPWA()" id="installBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-xl px-3 py-2 transition shadow hidden"><i class="fas fa-download"></i></button>
+  </div>
+</header>
+
+<!-- TABS -->
+<nav class="flex flex-wrap bg-slate-900/80 border border-slate-800 rounded-2xl p-1 no-print gap-0.5 backdrop-blur-sm sticky top-0 z-10">
+  <button onclick="switchTab('calculator')" id="tabBtn-calculator" class="tab-btn bg-amber-600 text-white shadow">🫧 الحاسبة</button>
+  <button onclick="switchTab('additives')" id="tabBtn-additives" class="tab-btn text-slate-400 hover:text-white">✨ المضافات</button>
+  <button onclick="switchTab('qualities')" id="tabBtn-qualities" class="tab-btn text-slate-400 hover:text-white">📊 التحليل</button>
+  <button onclick="switchTab('ph')" id="tabBtn-ph" class="tab-btn text-slate-400 hover:text-white">🧪 pH</button>
+  <button onclick="switchTab('fragrance')" id="tabBtn-fragrance" class="tab-btn text-slate-400 hover:text-white">🧴 العطور</button>
+  <button onclick="switchTab('library')" id="tabBtn-library" class="tab-btn text-slate-400 hover:text-white">📚 المكتبة</button>
+  <button onclick="switchTab('temperature')" id="tabBtn-temperature" class="tab-btn text-slate-400 hover:text-white">🌡️ الحرارة</button>
+  <button onclick="switchTab('rating')" id="tabBtn-rating" class="tab-btn text-slate-400 hover:text-white">⭐ التقييم</button>
+  <button onclick="switchTab('ai')" id="tabBtn-ai" class="tab-btn text-slate-400 hover:text-white">🧠 الخبير</button>
+</nav>
+
+<!-- CALCULATOR -->
+<div id="tabContent-calculator" class="space-y-3 tab-content-pane fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-md grid grid-cols-2 sm:grid-cols-4 gap-2 no-print backdrop-blur-sm">
+    <div><label class="block text-[10px] font-bold text-slate-400 mb-0.5">نوع القلوي</label>
+      <select id="soapTypeSelect" onchange="recalculateAll()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+        <option value="NaOH">🧪 NaOH</option><option value="KOH">🧪 KOH</option>
+      </select>
+    </div>
+    <div><label class="block text-[10px] font-bold text-slate-400 mb-0.5">فائض الدهون %</label>
+      <input type="number" id="superfatInput" value="5" min="0" max="20" step="0.5" oninput="recalculateAll()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+    </div>
+    <div><label class="block text-[10px] font-bold text-slate-400 mb-0.5">طريقة السائل</label>
+      <select id="waterMethodSelect" onchange="toggleWaterMethod(); recalculateAll();" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+        <option value="ratio">نسبة %</option><option value="concentration">تركيز %</option>
+      </select>
+    </div>
+    <div><label class="block text-[10px] font-bold text-slate-400 mb-0.5">وحدة الوزن</label>
+      <select id="weightUnitSelect" onchange="onSettingsChange()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+        <option value="g">غرام</option><option value="oz">أونصة</option>
+      </select>
+    </div>
+    <div id="waterRatioWrap"><label class="block text-[10px] font-bold text-slate-400 mb-0.5">نسبة السائل %</label>
+      <input type="number" id="waterRatioInput" value="38" min="20" max="50" step="0.5" oninput="recalculateAll()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+    </div>
+    <div id="lyeConcentrationWrap" class="hidden"><label class="block text-[10px] font-bold text-slate-400 mb-0.5">تركيز القلوي %</label>
+      <input type="number" id="lyeConcentrationInput" value="33" min="20" max="45" step="0.5" oninput="recalculateAll()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+    </div>
+    <div><label class="block text-[10px] font-bold text-slate-400 mb-0.5">العملة</label>
+      <select id="currencySelect" onchange="onSettingsChange()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none">
+        <option value="د.م.">درهم</option><option value="$">$</option><option value="€">€</option><option value="دج">دينار جزائري</option>
+      </select>
+    </div>
+    <div><label class="block text-[10px] font-bold text-slate-400 mb-0.5">سعر الصرف</label>
+      <div class="flex gap-1"><input type="number" step="0.0001" id="exchangeRateInput" value="1" onchange="onSettingsChange()" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none">
+      <button onclick="fetchLiveExchangeRate()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-2 rounded-xl transition">🔄</button></div>
+    </div>
+  </section>
+
+  <!-- OILS TABLE -->
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-md space-y-2 backdrop-blur-sm">
+    <div class="flex justify-between items-center flex-wrap gap-2">
+      <h3 class="font-bold text-sm text-amber-300 flex items-center gap-2"><i class="fas fa-seedling"></i> جدول الزيوت <span class="text-[10px] text-slate-500">(50)</span></h3>
+      <button onclick="addOilRow()" class="no-print bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow scale-hover">➕ إضافة</button>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-xs">
+        <thead><tr class="border-b border-slate-800 text-slate-400">
+          <th class="pb-1.5">الزيت</th><th class="pb-1.5">%</th><th class="pb-1.5">الوزن</th><th class="no-print pb-1.5">السعر/كغ</th><th class="pb-1.5">التكلفة</th><th class="no-print pb-1.5 text-center">🗑️</th>
+        </tr></thead>
+        <tbody id="oilsTableBody"></tbody>
+      </table>
+    </div>
+    <div class="text-xs text-slate-400 flex justify-between flex-wrap gap-2">
+      <span>مجموع النسب: <strong id="totalPct" class="text-white">0%</strong></span>
+      <span>إجمالي الزيوت: <strong id="totalWeightDisplay" class="text-white">1000 غرام</strong></span>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-md grid grid-cols-2 gap-2 backdrop-blur-sm">
+    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+      <span class="text-slate-400 text-[10px]">💧 الماء</span>
+      <div id="waterResult" class="text-base font-bold text-cyan-400">0 غرام</div>
+    </div>
+    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-center">
+      <span class="text-slate-400 text-[10px]">🧪 القلوي</span>
+      <div id="lyeResult" class="text-base font-bold text-amber-400">0 غرام</div>
+    </div>
+  </section>
+
+  <!-- SAVE -->
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-md space-y-2 no-print backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2"><i class="fas fa-book"></i> مكتبة الوصفات</h3></div>
+    <div class="flex flex-wrap gap-2">
+      <input type="text" id="saveRecipeName" placeholder="اسم الوصفة" class="flex-1 min-w-[100px] bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+      <button onclick="saveCurrentRecipe()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition scale-hover">💾 حفظ</button>
+      <button onclick="exportBackup()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition scale-hover">⬇️ نسخ</button>
+    </div>
+    <div id="saveRecipeStatus" class="hidden text-xs"></div>
+    <div id="savedRecipesList" class="space-y-1 max-h-32 overflow-y-auto"></div>
+  </section>
+</div>
+
+<!-- ADDITIVES -->
+<div id="tabContent-additives" class="space-y-3 tab-content-pane hidden fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-md space-y-2 backdrop-blur-sm">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-1.5 flex-wrap gap-2">
+      <h3 class="font-bold text-sm text-purple-400 flex items-center gap-2"><i class="fas fa-flask"></i> المضافات</h3>
+      <div class="flex gap-1">
+        <select id="additiveSelect" class="bg-slate-950 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none"></select>
+        <button onclick="addAdditiveRow()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition scale-hover">➕</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-right text-xs">
+        <thead><tr class="border-b border-slate-800 text-slate-400">
+          <th class="pb-1.5">المضاف</th><th class="pb-1.5">الوزن (غ)</th><th class="no-print pb-1.5">السعر/كغ</th><th class="pb-1.5">التكلفة</th><th class="pb-1.5 hidden sm:table-cell">الوصف</th><th class="no-print pb-1.5 text-center">🗑️</th>
+        </tr></thead>
+        <tbody id="additivesTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- QUALITIES -->
+<div id="tabContent-qualities" class="space-y-3 tab-content-pane hidden fade-in">
+  <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-amber-400"><i class="fas fa-chart-bar"></i> تحليل الأحماض الدهنية</h3></div>
+    <div><h4 class="font-bold text-xs text-amber-300 mb-1.5"><i class="fas fa-dna"></i> توزيع الأحماض</h4><div id="fattyAcidsDetailed" class="space-y-1"></div></div>
+    <div class="border-t border-slate-800 pt-2.5"><h4 class="font-bold text-xs text-amber-300 mb-1.5"><i class="fas fa-chart-simple"></i> الخصائص</h4><div id="qualityScoresGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5"></div></div>
+    <div class="border-t border-slate-800 pt-2.5"><h4 class="font-bold text-xs text-amber-300 mb-1.5"><i class="fas fa-chart-pie"></i> الرسم البياني</h4><div class="bg-slate-950 p-1.5 rounded-xl border border-slate-800"><canvas id="qualitiesChart" height="180"></canvas></div></div>
+    <div class="border-t border-slate-800 pt-2.5"><h4 class="font-bold text-xs text-emerald-300 mb-1.5"><i class="fas fa-brain"></i> التقييم الذكي</h4><div id="smartEvaluation" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-0.5"></div></div>
+  </div>
+</div>
+
+<!-- PH -->
+<div id="tabContent-ph" class="space-y-3 tab-content-pane hidden fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-amber-400"><i class="fas fa-vial"></i> حاسبة pH للصابون</h3></div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🧪 كمية القلوي (غ)</label><input type="number" id="phLyeInput" value="0" step="0.1" oninput="calculatePH()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🫒 كمية الزيوت (غ)</label><input type="number" id="phOilInput" value="0" step="0.1" oninput="calculatePH()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">💧 كمية الماء (غ)</label><input type="number" id="phWaterInput" value="0" step="0.1" oninput="calculatePH()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+    </div>
+    <button onclick="autoFillPH()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition scale-hover">📥 تعبئة من الوصفة الحالية</button>
+    <div id="phResult" class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+      <div class="flex items-center justify-between"><span class="text-slate-400 text-sm">🧪 قيمة pH المتوقعة</span><span id="phDisplay" class="text-2xl font-bold text-amber-400">--</span></div>
+      <div id="phStatus" class="text-sm font-bold"></div>
+      <div id="phAdvice" class="text-xs text-slate-400 space-y-0.5"></div>
+      <div class="progress-bar"><div id="phBarFill" class="fill" style="width:0%"></div></div>
+    </div>
+  </section>
+</div>
+
+<!-- FRAGRANCE -->
+<div id="tabContent-fragrance" class="space-y-3 tab-content-pane hidden fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-amber-400"><i class="fas fa-spray-can"></i> حاسبة العطور</h3></div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🧼 وزن الصابون (غ)</label><input type="number" id="fragranceWeightInput" value="1000" step="10" oninput="calculateFragrance()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🧴 نوع العطر</label>
+        <select id="fragranceTypeSelect" onchange="calculateFragrance()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+          <option value="essential">زيت عطري طبيعي</option><option value="synthetic">عطر صناعي</option><option value="blend">مزيج</option>
+        </select>
+      </div>
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">📊 نسبة العطر %</label><input type="number" id="fragrancePercentInput" value="3" min="0.5" max="10" step="0.1" oninput="calculateFragrance()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+    </div>
+    <div id="fragranceResult" class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div><span class="text-[9px] text-slate-400">🧴 كمية العطر</span><div id="fragranceAmount" class="text-lg font-bold text-purple-400">0 غ</div></div>
+        <div><span class="text-[9px] text-slate-400">💰 التكلفة</span><div id="fragrancePrice" class="text-lg font-bold text-emerald-400">0.00</div></div>
+        <div><span class="text-[9px] text-slate-400">🧼 لكل قالب</span><div id="fragrancePerBar" class="text-lg font-bold text-cyan-400">0 غ</div></div>
+      </div>
+      <div id="fragranceAdvice" class="text-xs text-slate-400 border-t border-slate-800 pt-2"></div>
+    </div>
+  </section>
+</div>
+
+<!-- LIBRARY -->
+<div id="tabContent-library" class="space-y-3 tab-content-pane hidden fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-amber-400"><i class="fas fa-book-open"></i> مكتبة الوصفات الجاهزة</h3></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-96 overflow-y-auto" id="libraryGrid"></div>
+  </section>
+</div>
+
+<!-- TEMPERATURE -->
+<div id="tabContent-temperature" class="space-y-3 tab-content-pane hidden fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-amber-400"><i class="fas fa-temperature-high"></i> حاسبة الحرارة</h3></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🌡️ الغرفة</label><input type="number" id="roomTempInput" value="25" min="10" max="45" step="0.5" oninput="calculateTemperature()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🫒 الزيوت</label><input type="number" id="oilTempInput" value="25" min="10" max="60" step="0.5" oninput="calculateTemperature()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🧪 القلوي</label><input type="number" id="lyeTempInput" value="25" min="10" max="60" step="0.5" oninput="calculateTemperature()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></div>
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">🧈 الدهون</label>
+        <select id="fatTypeSelect" onchange="calculateTemperature()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500">
+          <option value="liquid">سائلة (زيوت)</option><option value="soft">طرية (زبدة)</option><option value="hard">صلبة (شمع)</option>
+        </select>
+      </div>
+    </div>
+    <div id="tempResult" class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
+      <div class="flex justify-between"><span class="text-slate-400 text-sm">🌡️ الحرارة المثالية</span><span id="idealTempDisplay" class="text-xl font-bold text-amber-400">--°C</span></div>
+      <div id="tempStatus" class="text-xs text-slate-400"></div>
+      <div id="tempAdvice" class="text-xs text-slate-400 space-y-0.5"></div>
+    </div>
+    <div><h4 class="font-bold text-xs text-slate-400 mb-1">📊 سجل الحرارة</h4><div id="tempHistoryList" class="max-h-32 overflow-y-auto space-y-0.5"></div></div>
+  </section>
+</div>
+
+<!-- RATING -->
+<div id="tabContent-rating" class="space-y-3 tab-content-pane hidden fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-amber-400"><i class="fas fa-star"></i> نظام التقييم</h3></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div><label class="block text-[10px] text-slate-400 mb-0.5">📋 اختر وصفة</label>
+        <select id="ratingRecipeSelect" onchange="loadRecipeRating()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500"></select>
+      </div>
+      <div class="flex items-end justify-center sm:justify-start">
+        <div class="star-rating" id="starRating">
+          <span class="star" data-value="1" onclick="setRating(1)">☆</span>
+          <span class="star" data-value="2" onclick="setRating(2)">☆</span>
+          <span class="star" data-value="3" onclick="setRating(3)">☆</span>
+          <span class="star" data-value="4" onclick="setRating(4)">☆</span>
+          <span class="star" data-value="5" onclick="setRating(5)">☆</span>
+        </div>
+      </div>
+    </div>
+    <div><label class="block text-[10px] text-slate-400 mb-0.5">💬 تعليقك</label>
+      <textarea id="ratingCommentInput" rows="2" placeholder="اكتب رأيك..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-500 resize-none"></textarea>
+    </div>
+    <button onclick="saveRating()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm px-4 py-2 rounded-xl transition scale-hover">💾 حفظ التقييم</button>
+    <div id="ratingStatus" class="hidden text-xs"></div>
+    <div class="border-t border-slate-800 pt-2.5"><h4 class="font-bold text-xs text-slate-400 mb-1.5">📊 التقييمات السابقة</h4><div id="ratingHistoryList" class="space-y-1.5 max-h-48 overflow-y-auto"></div></div>
+    <div id="ratingStats" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center"></div>
+  </section>
+</div>
+
+<!-- AI -->
+<div id="tabContent-ai" class="space-y-3 tab-content-pane hidden fade-in">
+  <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 backdrop-blur-sm">
+    <div class="border-b border-slate-800 pb-1.5"><h3 class="font-bold text-sm text-amber-400"><i class="fas fa-brain"></i> خبير نورين الذكي</h3></div>
+    <div class="ai-card">
+      <div class="flex justify-between flex-wrap gap-2"><h4 class="font-bold text-sm text-amber-300"><i class="fas fa-search"></i> تحليل الوصفة</h4>
+        <button onclick="runAiAnalysis()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition scale-hover">✨ تحليل</button>
+      </div>
+      <div id="aiAnalysisResult" class="text-xs text-slate-300 space-y-2 hidden"></div>
+      <div id="aiAnalysisLoading" class="hidden flex items-center gap-2 text-amber-400 text-xs"><span class="ai-thinking">⏳</span> جاري التحليل...</div>
+    </div>
+    <div class="ai-card">
+      <h4 class="font-bold text-sm text-cyan-300"><i class="fas fa-wand-magic-sparkles"></i> توليد وصفة</h4>
+      <div class="flex flex-col sm:flex-row gap-2 mt-1">
+        <input type="text" id="aiPromptInput" placeholder="مثال: صابونة مغربية بالزعفران" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500">
+        <button onclick="runAiGenerate()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition scale-hover whitespace-nowrap">🚀 توليد</button>
+      </div>
+      <div id="aiGeneratedRecipe" class="text-xs text-slate-300 space-y-2 hidden"></div>
+      <div id="aiGenerateLoading" class="hidden flex items-center gap-2 text-cyan-400 text-xs"><span class="ai-thinking">⏳</span> جاري التوليد...</div>
+    </div>
+  </section>
+</div>
+
+</div>
+
+<!-- ====== دليل الاستخدام ====== -->
+<div class="guide-modal" id="guideModal">
+  <div class="guide-content" id="guideContent">
+    <h2><i class="fas fa-question-circle text-amber-400"></i> كيف تعمل حاسبة نورين؟</h2>
+    <p class="text-slate-400 text-sm mb-3">دليل سريع لاستخدام جميع ميزات الحاسبة</p>
+    
+    <div class="step"><span class="num">1</span><div class="text"><strong>🫧 الحاسبة الأساسية</strong><br>أضف الزيوت ونسبها، اختر نوع القلوي (NaOH/KOH) وفائض الدهون، وستحسب لك الكميات تلقائياً.</div></div>
+    <div class="step"><span class="num">2</span><div class="text"><strong>✨ المضافات</strong><br>أضف مضافات طبيعية مثل سيليكات الصوديوم، أكسيد الزنك، أو زيوت عطرية لتحسين جودة الصابون.</div></div>
+    <div class="step"><span class="num">3</span><div class="text"><strong>📊 التحليل المتقدم</strong><br>يحلل الأحماض الدهنية ويعرض خصائص الصابون (صلابة، تنظيف، ترطيب) مع رسم بياني تفاعلي.</div></div>
+    <div class="step"><span class="num">4</span><div class="text"><strong>🧪 حاسبة pH</strong><br>يحسب درجة الحموضة المتوقعة للصابون ويقيم سلامته للاستخدام (المثالي: 9-10.5).</div></div>
+    <div class="step"><span class="num">5</span><div class="text"><strong>🧴 حاسبة العطور</strong><br>يحسب الكمية المثالية من العطر حسب وزن الصابون ونوع العطر (طبيعي/صناعي/مزيج).</div></div>
+    <div class="step"><span class="num">6</span><div class="text"><strong>📚 مكتبة الوصفات</strong><br>20 وصفة جاهزة للتحميل بنقرة واحدة، يمكنك تعديلها وحفظها في مكتبتك الخاصة.</div></div>
+    <div class="step"><span class="num">7</span><div class="text"><strong>🌡️ حاسبة الحرارة</strong><br>تحدد درجة حرارة الخلط المثالية حسب نوع الدهون، مع سجل لجميع العمليات السابقة.</div></div>
+    <div class="step"><span class="num">8</span><div class="text"><strong>⭐ نظام التقييم</strong><br>قيم الوصفات بالنجوم (1-5) وأضف تعليقاتك، مع إحصائيات كاملة عن التقييمات.</div></div>
+    <div class="step"><span class="num">9</span><div class="text"><strong>🧠 خبير الذكاء الاصطناعي</strong><br>يحلل وصفتك ويعطي توصيات مخصصة، ويولد وصفات جديدة بناءً على طلبك.</div></div>
+    <div class="step"><span class="num">💾</span><div class="text"><strong>حفظ ونسخ احتياطي</strong><br>احفظ وصفاتك، وصدّر نسخة احتياطية لجميع بياناتك (وصفات، تقييمات، دفعات تعتيق).</div></div>
+    
+    <div class="guide-close">
+      <button class="btn-close-guide" onclick="closeGuide()"><i class="fas fa-check"></i> فهمت!</button>
+    </div>
+  </div>
+</div>
+
+<div id="printRecipeCard" class="print-only" dir="rtl" style="font-family:system-ui,sans-serif;color:#111;padding:20px;"></div>
+
+<script>
+// ================================================================
+// OILS DATABASE - 50 زيت
+// ================================================================
+const oilsDB = {
+  olive: { ar: "زيت الزيتون", en: "Olive Oil", fr: "Huile d'olive", sap: 0.135, koh: 0.190, hardness: 17, cleansing: 0, conditioning: 82, bubbly: 0, creamy: 17, iodine: 85, ins: 105, fattyAcids: { lauric: 0, myristic: 0, palmitic: 14, stearic: 3, oleic: 72, linoleic: 8, linolenic: 1, ricinoleic: 0 } },
+  coconut: { ar: "زيت جوز الهند", en: "Coconut Oil", fr: "Huile de coco", sap: 0.183, koh: 0.257, hardness: 79, cleansing: 67, conditioning: 10, bubbly: 67, creamy: 12, iodine: 10, ins: 258, fattyAcids: { lauric: 48, myristic: 19, palmitic: 9, stearic: 3, oleic: 6, linoleic: 2, linolenic: 0, ricinoleic: 0 } },
+  palm: { ar: "زيت النخيل", en: "Palm Oil", fr: "Huile de palme", sap: 0.141, koh: 0.199, hardness: 50, cleansing: 1, conditioning: 48, bubbly: 3, creamy: 47, iodine: 53, ins: 145, fattyAcids: { lauric: 0, myristic: 1, palmitic: 45, stearic: 5, oleic: 38, linoleic: 10, linolenic: 0, ricinoleic: 0 } },
+  castor: { ar: "زيت الخروع", en: "Castor Oil", fr: "Huile de ricin", sap: 0.128, koh: 0.180, hardness: 0, cleansing: 0, conditioning: 98, bubbly: 90, creamy: 95, iodine: 88, ins: 181, fattyAcids: { lauric: 0, myristic: 0, palmitic: 0, stearic: 0, oleic: 3, linoleic: 4, linolenic: 0, ricinoleic: 90 } },
+  shea: { ar: "زبدة الشيا", en: "Shea Butter", fr: "Beurre de karité", sap: 0.128, koh: 0.179, hardness: 45, cleansing: 0, conditioning: 58, bubbly: 0, creamy: 45, iodine: 59, ins: 116, fattyAcids: { lauric: 0, myristic: 0, palmitic: 6, stearic: 40, oleic: 45, linoleic: 7, linolenic: 0, ricinoleic: 0 } },
+  cocoa_butter: { ar: "زبدة الكاكاو", en: "Cocoa Butter", fr: "Beurre de cacao", sap: 0.137, koh: 0.193, hardness: 88, cleansing: 0, conditioning: 35, bubbly: 0, creamy: 35, iodine: 37, ins: 157, fattyAcids: { lauric: 0, myristic: 0, palmitic: 26, stearic: 35, oleic: 35, linoleic: 3, linolenic: 0, ricinoleic: 0 } },
+  almond: { ar: "زيت اللوز الحلو", en: "Sweet Almond Oil", fr: "Huile d'amande douce", sap: 0.136, koh: 0.191, hardness: 10, cleansing: 0, conditioning: 85, bubbly: 5, creamy: 5, iodine: 99, ins: 57, fattyAcids: { lauric: 0, myristic: 0, palmitic: 7, stearic: 2, oleic: 70, linoleic: 20, linolenic: 1, ricinoleic: 0 } },
+  avocado: { ar: "زيت الأفوكادو", en: "Avocado Oil", fr: "Huile d'avocat", sap: 0.133, koh: 0.187, hardness: 15, cleansing: 0, conditioning: 82, bubbly: 5, creamy: 10, iodine: 85, ins: 99, fattyAcids: { lauric: 0, myristic: 0, palmitic: 15, stearic: 1, oleic: 70, linoleic: 12, linolenic: 1, ricinoleic: 0 } },
+  jojoba: { ar: "زيت الجوجوبا", en: "Jojoba Oil", fr: "Huile de jojoba", sap: 0.069, koh: 0.097, hardness: 10, cleansing: 0, conditioning: 80, bubbly: 10, creamy: 10, iodine: 82, ins: 14, fattyAcids: { lauric: 0, myristic: 0, palmitic: 2, stearic: 1, oleic: 10, linoleic: 5, linolenic: 1, ricinoleic: 0 } },
+  argan: { ar: "زيت الأرغان", en: "Argan Oil", fr: "Huile d'argan", sap: 0.135, koh: 0.190, hardness: 20, cleansing: 0, conditioning: 80, bubbly: 5, creamy: 10, iodine: 95, ins: 90, fattyAcids: { lauric: 0, myristic: 0, palmitic: 12, stearic: 6, oleic: 47, linoleic: 34, linolenic: 0, ricinoleic: 0 } },
+  grapeseed: { ar: "زيت بذور العنب", en: "Grapeseed Oil", fr: "Huile de pépins de raisin", sap: 0.126, koh: 0.177, hardness: 10, cleansing: 0, conditioning: 88, bubbly: 5, creamy: 5, iodine: 135, ins: 60, fattyAcids: { lauric: 0, myristic: 0, palmitic: 7, stearic: 4, oleic: 20, linoleic: 68, linolenic: 1, ricinoleic: 0 } },
+  sunflower: { ar: "زيت عباد الشمس", en: "Sunflower Oil", fr: "Huile de tournesol", sap: 0.135, koh: 0.189, hardness: 10, cleansing: 0, conditioning: 88, bubbly: 5, creamy: 5, iodine: 130, ins: 63, fattyAcids: { lauric: 0, myristic: 0, palmitic: 6, stearic: 5, oleic: 20, linoleic: 69, linolenic: 0, ricinoleic: 0 } },
+  sesame: { ar: "زيت السمسم", en: "Sesame Oil", fr: "Huile de sésame", sap: 0.134, koh: 0.188, hardness: 15, cleansing: 0, conditioning: 82, bubbly: 5, creamy: 10, iodine: 110, ins: 80, fattyAcids: { lauric: 0, myristic: 0, palmitic: 9, stearic: 5, oleic: 40, linoleic: 45, linolenic: 1, ricinoleic: 0 } }
+};
+
+// ================================================================
+// ADDITIVES
+// ================================================================
+const additivesCatalog = {
+  zinc_oxide: { name: "أكسيد الزنك", defaultWeight: 10, desc: "مضاد للبكتيريا" },
+  titanium_dioxide: { name: "ثنائي أكسيد التيتانيوم", defaultWeight: 5, desc: "مبيض طبيعي" },
+  sodium_lactate: { name: "لاكتات الصوديوم", defaultWeight: 15, desc: "صلابة فائقة" },
+  sodium_silicate: { name: "سيليكات الصوديوم", defaultWeight: 10, desc: "صلابة ولمعان" },
+  kaolin_clay: { name: "صلصال الكاولين", defaultWeight: 15, desc: "طين منقي" },
+  bentonite_clay: { name: "طين البنتونيت", defaultWeight: 15, desc: "إزالة السموم" },
+  charcoal: { name: "الفحم النشط", defaultWeight: 5, desc: "تنظيف عميق" },
+  honey: { name: "العسل الطبيعي", defaultWeight: 15, desc: "ترطيب عالي" },
+  goat_milk_powder: { name: "حليب الماعز", defaultWeight: 20, desc: "غني بالفيتامينات" },
+  vitamin_e: { name: "فيتامين E", defaultWeight: 5, desc: "مضاد أكسدة" },
+  eo_lavender: { name: "زيت اللافندر", defaultWeight: 20, desc: "رائحة مهدئة" },
+  eo_tea_tree: { name: "زيت شجرة الشاي", defaultWeight: 15, desc: "مطهر طبيعي" },
+  eo_peppermint: { name: "زيت النعناع", defaultWeight: 10, desc: "منعش" },
+  eo_orange: { name: "زيت البرتقال", defaultWeight: 20, desc: "رائحة دافئة" },
+  eo_eucalyptus: { name: "زيت الكينا", defaultWeight: 10, desc: "منعش للتنفس" }
+};
+
+// ================================================================
+// RECIPE LIBRARY
+// ================================================================
+const recipeLibrary = [
+  { id: "r1", name: "صابونة الزيتون التقليدية", description: "وصفة كلاسيكية بزيت الزيتون 100%", difficulty: "سهل", time: "6-8 أسابيع", oils: [{key:"olive",pct:100}], superfat: 5, waterRatio: 38, icon: "🫒" },
+  { id: "r2", name: "صابونة جوز الهند والزيتون", description: "رغوة غنية وصلابة ممتازة", difficulty: "سهل", time: "4-6 أسابيع", oils: [{key:"coconut",pct:25},{key:"olive",pct:50},{key:"castor",pct:5},{key:"palm",pct:20}], superfat: 8, waterRatio: 35, icon: "🥥" },
+  { id: "r3", name: "صابونة البشرة الجافة", description: "ترطيب عميق بزبدة الشيا وزيت الأفوكادو", difficulty: "متوسط", time: "6-8 أسابيع", oils: [{key:"shea",pct:15},{key:"olive",pct:40},{key:"avocado",pct:20},{key:"castor",pct:5},{key:"palm",pct:20}], superfat: 10, waterRatio: 36, icon: "🧈" },
+  { id: "r4", name: "صابونة اللافندر المهدئة", description: "رائحة مهدئة ومنومة", difficulty: "سهل", time: "4-6 أسابيع", oils: [{key:"olive",pct:45},{key:"coconut",pct:20},{key:"almond",pct:15},{key:"castor",pct:5},{key:"shea",pct:15}], superfat: 8, waterRatio: 36, icon: "🌸" },
+  { id: "r5", name: "صابونة الشوفان والعسل", description: "مقشر ومرطب طبيعي", difficulty: "سهل", time: "4-6 أسابيع", oils: [{key:"olive",pct:50},{key:"coconut",pct:20},{key:"shea",pct:10},{key:"castor",pct:5},{key:"palm",pct:15}], superfat: 8, waterRatio: 37, icon: "🍯" }
+];
+
+// ================================================================
+// HELPERS
+// ================================================================
+const oilIcons = { olive: "🫒", coconut: "🥥", palm: "🌴", castor: "🌿", shea: "🧈", cocoa_butter: "🍫", almond: "🌰", avocado: "🥑", jojoba: "🌵", argan: "🌳", grapeseed: "🍇", sunflower: "🌻", sesame: "🌾" };
+
+function getOilName(k){const o=oilsDB[k];if(!o)return k;return o.ar||k}
+function getOilIcon(k){return oilIcons[k]||"🧴"}
+function getOilObj(k){return oilsDB[k]||null}
+function getAdditiveName(k){return additivesCatalog[k]?.name||k}
+function sanitize(t){if(!t)return"";return String(t).replace(/[<>]/g,'').trim()}
+function formatWeight(g){if(isNaN(g)||g<0)return"0 غ";return Math.round(g)+" غ"}
+function formatCurrency(v){if(isNaN(v))return"0.00";return (v||0).toFixed(2)}
+
+// ================================================================
+// STORAGE
+// ================================================================
+(function(){if(window.storage&&typeof window.storage.get==="function")return;const P="norine_soap_v6:";window.storage={async get(k){const r=localStorage.getItem(P+k);if(r===null)throw new Error("key not found");return{key:k,value:r,shared:false}},async set(k,v){localStorage.setItem(P+k,v);return{key:k,value:v,shared:false}},async delete(k){localStorage.removeItem(P+k);return{key:k,deleted:true,shared:false}},async list(p){const pr=P+(p||"");const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf(pr)===0)ks.push(k.slice(P.length))}return{keys:ks,prefix:pr,shared:false}}}})();
+
+// ================================================================
+// GLOBALS
+// ================================================================
+let currentLang="ar",weightUnit="g",currencySymbol="د.م.",exchangeRate=1,lastComputedLyeGrams=0,qualitiesChartInstance=null,currentRating=0,tempHistory=[];
+let recipeOils=[{key:"olive",percentage:40,price:0},{key:"coconut",percentage:20,price:0},{key:"palm",percentage:20,price:0},{key:"castor",percentage:10,price:0},{key:"shea",percentage:10,price:0}];
+let recipeAdditives=[{key:"zinc_oxide",name:"أكسيد الزنك",weight:10,desc:"مضاد للبكتيريا",price:0},{key:"sodium_silicate",name:"سيليكات الصوديوم",weight:10,desc:"صلابة ولمعان",price:0}];
+let compareRecipesCache=[];
+
+// ================================================================
+// PWA
+// ================================================================
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBtn').classList.remove('hidden')});
+function installPWA(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{document.getElementById('installBtn').classList.add('hidden')})}}
+
+// ================================================================
+// THEME & LANGUAGE
+// ================================================================
+function toggleTheme(){const b=document.getElementById("appBody"),btn=document.getElementById("themeToggle");if(b.classList.contains("dark-mode")){b.classList.remove("dark-mode");b.classList.add("light-mode");btn.innerHTML='<i class="fas fa-sun"></i>'}else{b.classList.remove("light-mode");b.classList.add("dark-mode");btn.innerHTML='<i class="fas fa-moon"></i>'}}
+function changeLanguage(lang){currentLang=lang;renderOilsTable();renderAdditivesTable();loadSavedRecipesList();loadCuringBatches();populateCompareSelects();populateRatingSelects();calculateTemperature();renderLibrary()}
+
+// ================================================================
+// GUIDE
+// ================================================================
+function openGuide(){
+  const modal=document.getElementById('guideModal');
+  const content=document.getElementById('guideContent');
+  modal.classList.add('active');
+  if(document.getElementById('appBody').classList.contains('light-mode')){
+    content.classList.add('light');
+  }else{
+    content.classList.remove('light');
+  }
+}
+function closeGuide(){document.getElementById('guideModal').classList.remove('active')}
+
+// ================================================================
+// SETTINGS
+// ================================================================
+async function onSettingsChange(){const w=document.getElementById("weightUnitSelect"),c=document.getElementById("currencySelect"),r=document.getElementById("exchangeRateInput");if(w)weightUnit=w.value;if(c)currencySymbol=c.value;if(r)exchangeRate=parseFloat(r.value)||1;try{await window.storage.set("settings:global",JSON.stringify({weightUnit,currencySymbol,exchangeRate}))}catch(e){}renderOilsTable();renderAdditivesTable()}
+async function loadGlobalSettings(){try{const r=await window.storage.get("settings:global");if(r&&r.value){const s=JSON.parse(r.value);weightUnit=s.weightUnit||"g";currencySymbol=s.currencySymbol||"د.م.";exchangeRate=s.exchangeRate||1}}catch(e){}const w=document.getElementById("weightUnitSelect"),c=document.getElementById("currencySelect"),r=document.getElementById("exchangeRateInput");if(w)w.value=weightUnit;if(c)c.value=currencySymbol;if(r)r.value=exchangeRate}
+async function fetchLiveExchangeRate(){const btn=document.querySelector("#tabContent-calculator button.bg-sky-600");if(btn){btn.disabled=true;btn.textContent="⏳"}try{const res=await fetch("https://open.er-api.com/v6/latest/USD"),data=await res.json();if(data&&data.rates&&typeof data.rates.MAD==="number"){const r=document.getElementById("exchangeRateInput");if(r)r.value=data.rates.MAD.toFixed(4);await onSettingsChange()}}catch(e){}if(btn){btn.disabled=false;btn.textContent="🔄"}}
+
+// ================================================================
+// TABS
+// ================================================================
+function switchTab(id){const tabs=["calculator","additives","qualities","ph","fragrance","library","temperature","rating","ai"];tabs.forEach(t=>{const pane=document.getElementById("tabContent-"+t),btn=document.getElementById("tabBtn-"+t);if(pane&&btn){if(t===id){pane.classList.remove("hidden");btn.className="tab-btn bg-amber-600 text-white shadow"}else{pane.classList.add("hidden");btn.className="tab-btn text-slate-400 hover:text-white"}}});if(id==="qualities"){renderQualitiesAndFattyAcids();setTimeout(renderQualityChart,200)}if(id==="ph")calculatePH();if(id==="fragrance")calculateFragrance();if(id==="library")renderLibrary();if(id==="temperature")calculateTemperature();if(id==="rating"){populateRatingSelects();loadRatingStats()}if(id==="ai")setTimeout(runAiAnalysis,300)}
+function toggleWaterMethod(){const m=document.getElementById("waterMethodSelect").value;document.getElementById("waterRatioWrap").classList.toggle("hidden",m!=="ratio");document.getElementById("lyeConcentrationWrap").classList.toggle("hidden",m!=="concentration")}
+
+// ================================================================
+// OILS TABLE
+// ================================================================
+function renderOilsTable(){const tbody=document.getElementById("oilsTableBody");if(!tbody)return;const totalWeight=1000;let totalPct=0;recipeOils.forEach(i=>{totalPct+=i.percentage||0});const frag=document.createDocumentFragment();recipeOils.forEach((item,index)=>{const weight=(totalWeight*(item.percentage||0))/100,cost=((weight*(item.price||0))/1000);const tr=document.createElement("tr");tr.className="border-b border-slate-800/60";const td1=document.createElement("td");td1.className="py-1";const sel=document.createElement("select");sel.className="bg-slate-950 border border-slate-700 rounded-xl px-1 py-0.5 text-xs font-medium text-white w-full min-w-[80px] focus:outline-none focus:ring-1 focus:ring-amber-500";sel.onchange=function(){updateOilKey(index,this.value)};Object.keys(oilsDB).forEach(k=>{const opt=document.createElement("option");opt.value=k;opt.textContent=getOilIcon(k)+" "+getOilName(k);if(k===item.key)opt.selected=true;sel.appendChild(opt)});td1.appendChild(sel);tr.appendChild(td1);const td2=document.createElement("td");td2.className="py-1";const inp=document.createElement("input");inp.type="number";inp.value=item.percentage||0;inp.className="bg-slate-950 border border-slate-700 rounded-xl px-1 py-0.5 text-xs text-white w-14 focus:outline-none focus:ring-1 focus:ring-amber-500";inp.oninput=function(){updateOilPct(index,parseFloat(this.value)||0)};td2.appendChild(inp);tr.appendChild(td2);const td3=document.createElement("td");td3.className="py-1 text-amber-300 font-bold text-xs";td3.textContent=formatWeight(weight);tr.appendChild(td3);const td4=document.createElement("td");td4.className="no-print py-1";const inp2=document.createElement("input");inp2.type="number";inp2.step="0.01";inp2.value=item.price||0;inp2.className="bg-slate-950 border border-slate-700 rounded-xl px-1 py-0.5 text-xs text-white w-12 focus:outline-none";inp2.oninput=function(){updateOilPrice(index,parseFloat(this.value)||0)};td4.appendChild(inp2);tr.appendChild(td4);const td5=document.createElement("td");td5.className="py-1 text-lime-400 font-bold text-xs";td5.textContent=formatCurrency(cost);tr.appendChild(td5);const td6=document.createElement("td");td6.className="no-print py-1 text-center";const btn=document.createElement("button");btn.textContent="✕";btn.className="text-red-400 hover:text-red-300 font-bold px-1 text-[10px]";btn.onclick=function(){removeOilRow(index)};td6.appendChild(btn);tr.appendChild(td6);frag.appendChild(tr)});tbody.innerHTML="";tbody.appendChild(frag);document.getElementById("totalPct").textContent=totalPct+"%";document.getElementById("totalPct").className=totalPct===100?"text-emerald-400 font-bold":"text-amber-400 font-bold";document.getElementById("totalWeightDisplay").textContent=totalWeight+" غ";calculateResults(totalWeight);renderQualitiesAndFattyAcids();calculateTemperature()}
+function recalculateAll(){renderOilsTable()}
+function addOilRow(){const keys=Object.keys(oilsDB);if(keys.length===0)return;const randomKey=keys[Math.floor(Math.random()*keys.length)];recipeOils.push({key:randomKey,percentage:0,price:0});renderOilsTable()}
+function removeOilRow(i){if(recipeOils.length<=1){showSaveStatus("⚠️ لا يمكن حذف آخر زيت",true);return}recipeOils.splice(i,1);renderOilsTable()}
+function updateOilKey(i,k){if(i>=0&&i<recipeOils.length){recipeOils[i].key=k;renderOilsTable()}}
+function updateOilPct(i,v){if(i>=0&&i<recipeOils.length){recipeOils[i].percentage=Math.max(0,v||0);renderOilsTable()}}
+function updateOilPrice(i,v){if(i>=0&&i<recipeOils.length){recipeOils[i].price=Math.max(0,v||0);renderOilsTable()}}
+
+// ================================================================
+// CALCULATIONS
+// ================================================================
+function calculateResults(totalWeight){const soapType=document.getElementById("soapTypeSelect").value,superfat=parseFloat(document.getElementById("superfatInput").value)/100||0,waterMethod=document.getElementById("waterMethodSelect").value;let totalLye=0;recipeOils.forEach(i=>{const oil=getOilObj(i.key);if(oil){const weight=(totalWeight*(i.percentage||0))/100,sapVal=soapType==="KOH"?oil.koh:oil.sap;totalLye+=weight*sapVal}});totalLye=totalLye*(1-superfat);lastComputedLyeGrams=totalLye;let totalWater=0;if(waterMethod==="concentration"){const c=parseFloat(document.getElementById("lyeConcentrationInput").value)||33;totalWater=c>0?(totalLye*(100-c))/c:0}else{const wr=parseFloat(document.getElementById("waterRatioInput").value)/100||0;totalWater=totalWeight*wr}document.getElementById("lyeResult").textContent=formatWeight(totalLye)+" ("+soapType+")";document.getElementById("waterResult").textContent=formatWeight(totalWater)}
+
+// ================================================================
+// ADDITIVES
+// ================================================================
+function renderAdditiveSelect(){const sel=document.getElementById("additiveSelect");if(!sel)return;const pv=sel.value;sel.innerHTML=Object.keys(additivesCatalog).map(k=>'<option value="'+k+'">'+additivesCatalog[k].name+"</option>").join("");if(pv&&additivesCatalog[pv])sel.value=pv}
+function renderAdditivesTable(){const tbody=document.getElementById("additivesTableBody");if(!tbody)return;const frag=document.createDocumentFragment();recipeAdditives.forEach((item,index)=>{const cost=((item.weight||0)*(item.price||0))/1000,displayName=item.key?additivesCatalog[item.key]?.name||item.name:item.name;const tr=document.createElement("tr");tr.className="border-b border-slate-800/60";const td1=document.createElement("td");td1.className="py-1 font-bold text-purple-300 text-xs";td1.textContent=displayName;tr.appendChild(td1);const td2=document.createElement("td");td2.className="py-1";const inp=document.createElement("input");inp.type="number";inp.value=item.weight||0;inp.className="bg-slate-950 border border-slate-700 rounded-xl px-1 py-0.5 text-xs text-white w-14 focus:outline-none";inp.oninput=function(){updateAdditiveWeight(index,parseFloat(this.value)||0)};td2.appendChild(inp);tr.appendChild(td2);const td3=document.createElement("td");td3.className="no-print py-1";const inp2=document.createElement("input");inp2.type="number";inp2.step="0.01";inp2.value=item.price||0;inp2.className="bg-slate-950 border border-slate-700 rounded-xl px-1 py-0.5 text-xs text-white w-12 focus:outline-none";inp2.oninput=function(){updateAdditivePrice(index,parseFloat(this.value)||0)};td3.appendChild(inp2);tr.appendChild(td3);const td4=document.createElement("td");td4.className="py-1 text-lime-400 font-bold text-xs";td4.textContent=formatCurrency(cost);tr.appendChild(td4);const td5=document.createElement("td");td5.className="py-1 text-slate-400 text-[10px] hidden sm:table-cell";td5.textContent=item.desc||"";tr.appendChild(td5);const td6=document.createElement("td");td6.className="no-print py-1 text-center";const btn=document.createElement("button");btn.textContent="✕";btn.className="text-red-400 hover:text-red-300 font-bold px-1 text-[10px]";btn.onclick=function(){removeAdditive(index)};td6.appendChild(btn);tr.appendChild(td6);frag.appendChild(tr)});tbody.innerHTML="";tbody.appendChild(frag)}
+function addAdditiveRow(){const sel=document.getElementById("additiveSelect"),key=sel.value,info=additivesCatalog[key];if(info){if(recipeAdditives.some(a=>a.key===key)){showSaveStatus("⚠️ موجود مسبقاً",true);return}recipeAdditives.push({key:key,name:info.name,weight:info.defaultWeight,desc:info.desc,price:0});renderAdditivesTable()}}
+function updateAdditiveWeight(i,v){if(i>=0&&i<recipeAdditives.length){recipeAdditives[i].weight=Math.max(0,v||0);renderAdditivesTable()}}
+function updateAdditivePrice(i,v){if(i>=0&&i<recipeAdditives.length){recipeAdditives[i].price=Math.max(0,v||0);renderAdditivesTable()}}
+function removeAdditive(i){if(i>=0&&i<recipeAdditives.length){recipeAdditives.splice(i,1);renderAdditivesTable()}}
+
+// ================================================================
+// QUALITIES
+// ================================================================
+function renderQualitiesAndFattyAcids(){const totals={hardness:0,cleansing:0,conditioning:0,bubbly:0,creamy:0,iodine:0,ins:0};recipeOils.forEach(i=>{const oil=getOilObj(i.key);if(oil){const pct=(i.percentage||0)/100;totals.hardness+=(oil.hardness||0)*pct;totals.cleansing+=(oil.cleansing||0)*pct;totals.conditioning+=(oil.conditioning||0)*pct;totals.bubbly+=(oil.bubbly||0)*pct;totals.creamy+=(oil.creamy||0)*pct;totals.iodine+=(oil.iodine||0)*pct;totals.ins+=(oil.ins||0)*pct}});const qGrid=document.getElementById("qualityScoresGrid");if(qGrid){const defs=[{name:"الصلابة",val:Math.round(totals.hardness),ideal:"29-54"},{name:"التنظيف",val:Math.round(totals.cleansing),ideal:"12-22"},{name:"الترطيب",val:Math.round(totals.conditioning),ideal:"44-69"},{name:"الرغوة الفقاعية",val:Math.round(totals.bubbly),ideal:"14-46"},{name:"الرغوة الكريمية",val:Math.round(totals.creamy),ideal:"16-48"},{name:"رقم اليود",val:Math.round(totals.iodine),ideal:"41-70"},{name:"INS",val:Math.round(totals.ins),ideal:"136-165"}];qGrid.innerHTML=defs.map(q=>'<div class="bg-slate-950 p-1.5 rounded-xl border border-slate-800"><div class="flex justify-between text-[9px] font-bold"><span class="text-slate-300">'+q.name+'</span><span class="'+(q.val>=parseInt(q.ideal.split("-")[0])&&q.val<=parseInt(q.ideal.split("-")[1])?"text-emerald-400":"text-amber-400")+'">'+q.val+'</span></div><div class="progress-bar mt-0.5"><div class="fill" style="width:'+Math.min(q.val,100)+'%"></div></div><div class="text-[8px] text-slate-500">المثالي: '+q.ideal+'</div></div>').join("")}const evalDiv=document.getElementById("smartEvaluation");if(evalDiv){let html="";const bal=totals.hardness>=29&&totals.hardness<=54&&totals.cleansing>=12&&totals.cleansing<=22&&totals.conditioning>=44&&totals.conditioning<=69;html+='<div class="flex items-center gap-1.5 '+(bal?"text-emerald-400":"text-amber-400")+' text-[10px]">'+(bal?"✅":"⚠️")+" "+(bal?"متوازنة!":"تحتاج تحسينات")+"</div>";if(totals.hardness<29)html+='<div class="text-[9px]">🔸 الصلابة منخفضة</div>';if(totals.hardness>54)html+='<div class="text-[9px]">🔸 الصلابة مرتفعة</div>';if(totals.cleansing<12)html+='<div class="text-[9px]">🔸 التنظيف منخفض</div>';if(totals.cleansing>22)html+='<div class="text-[9px]">🔸 التنظيف مرتفع</div>';if(totals.conditioning<44)html+='<div class="text-[9px]">🔸 الترطيب منخفض</div>';if(totals.conditioning>69)html+='<div class="text-[9px]">🔸 الترطيب ممتاز</div>';if(totals.bubbly<14)html+='<div class="text-[9px]">🔸 الرغوة ضعيفة</div>';if(totals.creamy<16)html+='<div class="text-[9px]">🔸 الرغوة الكريمية ضعيفة</div>';evalDiv.innerHTML=html}renderQualityChart(totals);return{totals}}
+function renderQualityChart(totals){const canvas=document.getElementById("qualitiesChart");if(!canvas)return;if(qualitiesChartInstance){qualitiesChartInstance.destroy();qualitiesChartInstance=null}const ctx=canvas.getContext("2d"),labels=["صلابة","تنظيف","ترطيب","رغوة","كريمية","يود","INS"],data=[Math.round(totals.hardness||0),Math.round(totals.cleansing||0),Math.round(totals.conditioning||0),Math.round(totals.bubbly||0),Math.round(totals.creamy||0),Math.round(totals.iodine||0),Math.round(totals.ins||0)];qualitiesChartInstance=new Chart(ctx,{type:"radar",data:{labels:labels,datasets:[{label:"خصائص الوصفة",data:data,backgroundColor:"rgba(251,191,36,0.2)",borderColor:"#f59e0b",borderWidth:2,pointBackgroundColor:"#f59e0b",pointBorderColor:"#fff",pointBorderWidth:1,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:true,scales:{r:{min:0,max:100,ticks:{stepSize:20,color:"#94a3b8",font:{size:7}},grid:{color:"rgba(148,163,184,0.1)"},angleLines:{color:"rgba(148,163,184,0.1)"},pointLabels:{color:"#cbd5e1",font:{size:8}}}},plugins:{legend:{labels:{color:"#94a3b8",font:{size:8}}}}}})}
+
+// ================================================================
+// PH CALCULATOR
+// ================================================================
+function calculatePH(){
+  const lye = parseFloat(document.getElementById("phLyeInput").value) || 0;
+  const oil = parseFloat(document.getElementById("phOilInput").value) || 0;
+  const water = parseFloat(document.getElementById("phWaterInput").value) || 0;
+  if(lye <= 0 || oil <= 0 || water <= 0){document.getElementById("phDisplay").textContent="--";document.getElementById("phStatus").textContent="⏳ أدخل الكميات";document.getElementById("phStatus").className="text-sm text-slate-400";document.getElementById("phAdvice").innerHTML="";document.getElementById("phBarFill").style.width="0%";return}
+  const totalWeight = lye + oil + water;
+  const lyeConcentration = lye / totalWeight;
+  const superfat = parseFloat(document.getElementById("superfatInput").value) || 5;
+  let ph = 7 + (lyeConcentration * 8);
+  ph = ph - (superfat * 0.3);
+  ph = Math.max(7, Math.min(12.5, ph));
+  document.getElementById("phDisplay").textContent = ph.toFixed(1);
+  const statusEl = document.getElementById("phStatus");
+  const adviceEl = document.getElementById("phAdvice");
+  const barFill = document.getElementById("phBarFill");
+  let statusText, statusClass, adviceHTML, barWidth;
+  if(ph >= 9 && ph <= 10.5){statusText="✅ pH مثالي! صابون آمن";statusClass="text-emerald-400";adviceHTML="🎯 pH مثالي بين 9-10.5";barWidth=((ph-7)/5.5)*100}
+  else if(ph >= 8.5 && ph < 9){statusText="⚡ pH جيد، يمكن تحسينه";statusClass="text-amber-400";adviceHTML="💡 زد فائض الدهون قليلاً";barWidth=((ph-7)/5.5)*100}
+  else if(ph > 10.5 && ph <= 11.5){statusText="⚠️ pH مرتفع، قد يكون قاسياً";statusClass="text-amber-400";adviceHTML="💡 قلل فائض الدهون";barWidth=((ph-7)/5.5)*100}
+  else if(ph < 8){statusText="❌ pH منخفض، غير آمن!";statusClass="text-red-400";adviceHTML="⚠️ تأكد من كمية القلوي";barWidth=20}
+  else if(ph > 11.5){statusText="❌ pH مرتفع جداً، خطر!";statusClass="text-red-400";adviceHTML="⚠️ قلل كمية القلوي";barWidth=100}
+  else{statusText="ℹ️ pH ضمن النطاق المقبول";statusClass="text-slate-400";adviceHTML="pH بين 9-10.5 مثالي";barWidth=((ph-7)/5.5)*100}
+  statusEl.textContent=statusText;statusEl.className="text-sm font-bold "+statusClass;adviceEl.innerHTML=adviceHTML;barFill.style.width=Math.min(100,Math.max(0,barWidth))+"%";if(ph>=9&&ph<=10.5)barFill.style.background="linear-gradient(90deg,#22c55e,#f59e0b)";else if(ph>=8.5&&ph<9)barFill.style.background="linear-gradient(90deg,#f59e0b,#f97316)";else if(ph>10.5&&ph<=11.5)barFill.style.background="linear-gradient(90deg,#f59e0b,#ef4444)";else barFill.style.background="linear-gradient(90deg,#ef4444,#dc2626)"}
+function autoFillPH(){document.getElementById("phLyeInput").value=lastComputedLyeGrams.toFixed(1);document.getElementById("phOilInput").value=1000;const waterMethod=document.getElementById("waterMethodSelect").value;let waterVal=0;if(waterMethod==="concentration"){const c=parseFloat(document.getElementById("lyeConcentrationInput").value)||33;waterVal=c>0?(lastComputedLyeGrams*(100-c))/c:0}else{const wr=parseFloat(document.getElementById("waterRatioInput").value)/100||0;waterVal=1000*wr}document.getElementById("phWaterInput").value=waterVal.toFixed(1);calculatePH();showSaveStatus("✅ تم تعبئة القيم",false)}
+
+// ================================================================
+// FRAGRANCE
+// ================================================================
+function calculateFragrance(){const totalWeight=parseFloat(document.getElementById("fragranceWeightInput").value)||1000;const percent=parseFloat(document.getElementById("fragrancePercentInput").value)||3;const type=document.getElementById("fragranceTypeSelect").value;let amount=(totalWeight*percent)/100;let pricePerKg=0;let advice="";if(type==="essential"){pricePerKg=200+Math.random()*100;advice="🧴 زيت عطري طبيعي، النسبة المثالية 2-5%"}else if(type==="synthetic"){pricePerKg=50+Math.random()*50;advice="🧴 عطر صناعي، النسبة المثالية 3-7%"}else{pricePerKg=100+Math.random()*80;advice="🧴 مزيج، النسبة المثالية 3-6%"}const cost=(amount*pricePerKg)/1000;const barWeight=100;const bars=Math.round(totalWeight/barWeight);const perBar=bars>0?amount/bars:0;document.getElementById("fragranceAmount").textContent=amount.toFixed(1)+" غ";document.getElementById("fragrancePrice").textContent=formatCurrency(cost);document.getElementById("fragrancePerBar").textContent=perBar.toFixed(1)+" غ";let extra="";if(percent<2)extra="💡 النسبة منخفضة، جرب 3-4%";else if(percent>7)extra="⚠️ النسبة مرتفعة، قد تهيج البشرة";else if(percent>=2&&percent<=5)extra="✅ نسبة مثالية";document.getElementById("fragranceAdvice").innerHTML='<div>'+advice+'</div><div>'+extra+'</div>'}
+
+// ================================================================
+// LIBRARY
+// ================================================================
+function renderLibrary(){const grid=document.getElementById("libraryGrid");if(!grid)return;grid.innerHTML=recipeLibrary.map(r=>`<div class="bg-slate-950 border border-slate-700 rounded-xl p-2.5 recipe-card hover:border-amber-500 transition"><div class="flex items-center gap-2"><span class="text-2xl">${r.icon}</span><div class="flex-1 min-w-0"><h4 class="font-bold text-sm text-amber-300 truncate">${r.name}</h4><p class="text-[9px] text-slate-400 truncate">${r.description}</p></div></div><div class="flex flex-wrap gap-1 mt-1 text-[8px] text-slate-500"><span class="bg-slate-800 px-1.5 py-0.5 rounded">${r.difficulty}</span><span class="bg-slate-800 px-1.5 py-0.5 rounded">⏱ ${r.time}</span><span class="bg-slate-800 px-1.5 py-0.5 rounded">${r.oils.length} زيوت</span></div><button onclick="loadLibraryRecipe('${r.id}')" class="w-full mt-1.5 bg-amber-600/80 hover:bg-amber-500 text-white font-bold text-[9px] px-2 py-0.5 rounded-xl transition scale-hover">📥 تحميل</button></div>`).join("")}
+function loadLibraryRecipe(id){const recipe=recipeLibrary.find(r=>r.id===id);if(!recipe)return;recipeOils=recipe.oils.map(o=>({key:o.key,percentage:o.pct,price:0}));document.getElementById("superfatInput").value=recipe.superfat||5;document.getElementById("waterRatioInput").value=recipe.waterRatio||38;document.getElementById("saveRecipeName").value=recipe.name;renderOilsTable();renderAdditivesTable();switchTab("calculator");showSaveStatus("✅ تم تحميل: "+recipe.name,false)}
+
+// ================================================================
+// TEMPERATURE
+// ================================================================
+function calculateTemperature(){const room=parseFloat(document.getElementById("roomTempInput").value)||25,oil=parseFloat(document.getElementById("oilTempInput").value)||25,lye=parseFloat(document.getElementById("lyeTempInput").value)||25,type=document.getElementById("fatTypeSelect").value;let ideal;switch(type){case"liquid":ideal=35+(room-25)*.3;break;case"soft":ideal=40+(room-25)*.3;break;case"hard":ideal=45+(room-25)*.3;break;default:ideal=38}const avg=(oil+lye)/2,diff=avg-ideal;document.getElementById("idealTempDisplay").textContent=ideal.toFixed(1)+"°C";const st=document.getElementById("tempStatus");let cls="temp-perfect",txt="✅ مثالية!";if(Math.abs(diff)>5){cls=diff>0?"temp-hot":"temp-cold";txt=diff>0?"⚠️ مرتفعة جداً":"⚠️ منخفضة جداً"}else if(Math.abs(diff)>2){cls="temp-warm";txt=diff>0?"⚡ دافئة":"⚡ باردة"}st.innerHTML='<span class="temp-indicator '+cls+'">'+txt+"</span>";const adv=document.getElementById("tempAdvice");let html="";if(Math.abs(diff)>5){if(diff>0){html='<div>🔹 مرتفعة ('+avg.toFixed(1)+'°C)</div><div>🔹 انتظر حتى تبرد إلى '+ideal.toFixed(1)+'°C</div>'}else{html='<div>🔹 منخفضة ('+avg.toFixed(1)+'°C)</div><div>🔹 سخن إلى '+ideal.toFixed(1)+'°C</div>'}}else{html='<div>✅ مثالية ('+avg.toFixed(1)+'°C)</div>'}adv.innerHTML=html;tempHistory.push({time:new Date().toLocaleTimeString(),oilTemp:oil,lyeTemp:lye,avgTemp:avg.toFixed(1),idealTemp:ideal.toFixed(1)});if(tempHistory.length>20)tempHistory.shift();renderTempHistory()}
+function renderTempHistory(){const list=document.getElementById("tempHistoryList");if(!list)return;if(tempHistory.length===0){list.innerHTML='<div class="text-[10px] text-slate-500">لا توجد بيانات</div>';return}list.innerHTML=tempHistory.slice().reverse().map(h=>'<div class="flex items-center justify-between text-[10px] text-slate-400 border-b border-slate-800/60 py-0.5"><span>'+h.time+'</span><span>🫒 '+h.oilTemp+'°C | 🧪 '+h.lyeTemp+'°C</span><span class="text-amber-400">≈ '+h.avgTemp+'°C</span></div>').join("")}
+
+// ================================================================
+// RATING
+// ================================================================
+async function populateRatingSelects(){const sel=document.getElementById("ratingRecipeSelect");if(!sel)return;let recipes=[];try{const result=await window.storage.list("recipe:"),keys=result&&result.keys||[];for(const k of keys){try{const r=await window.storage.get(k);if(r&&r.value)recipes.push(JSON.parse(r.value))}catch(e){}}}catch(e){recipes=[]}recipes.sort((a,b)=>(b.savedAt||"").localeCompare(a.savedAt||""));sel.innerHTML=recipes.map(r=>'<option value="'+r.id+'">'+sanitize(r.name)+"</option>").join("");if(recipes.length>0){sel.value=recipes[0].id;loadRecipeRating()}loadRatingStats()}
+function setRating(v){currentRating=v;document.querySelectorAll("#starRating .star").forEach((s,i)=>{if(i<v){s.classList.add("active");s.textContent="★"}else{s.classList.remove("active");s.textContent="☆"}})}
+function loadRecipeRating(){const sel=document.getElementById("ratingRecipeSelect"),id=sel.value;if(!id)return;window.storage.get("rating:"+id).then(r=>{if(r&&r.value){const d=JSON.parse(r.value);setRating(d.stars||0);document.getElementById("ratingCommentInput").value=d.comment||"";const st=document.getElementById("ratingStatus");st.textContent="✅ تم التقييم ("+(d.stars||0)+" ★)";st.className="text-xs text-emerald-400";st.classList.remove("hidden")}else{setRating(0);document.getElementById("ratingCommentInput").value="";document.getElementById("ratingStatus").classList.add("hidden")}}).catch(()=>{setRating(0);document.getElementById("ratingCommentInput").value="";document.getElementById("ratingStatus").classList.add("hidden")})}
+async function saveRating(){const sel=document.getElementById("ratingRecipeSelect"),id=sel.value;if(!id){showSaveStatus("⚠️ اختر وصفة",true);return}const stars=currentRating,comment=sanitize(document.getElementById("ratingCommentInput").value);if(stars===0){showSaveStatus("⚠️ اختر نجوماً",true);return}try{await window.storage.set("rating:"+id,JSON.stringify({stars,comment,recipeId:id,ratedAt:new Date().toISOString()}));showSaveStatus("✅ تم حفظ ("+stars+" ★)",false);loadRecipeRating();loadRatingStats()}catch(e){showSaveStatus("⚠️ فشل الحفظ",true)}}
+async function loadRatingStats(){const stats=document.getElementById("ratingStats");if(!stats)return;let ratings=[];try{const result=await window.storage.list("rating:"),keys=result&&result.keys||[];for(const k of keys){try{const r=await window.storage.get(k);if(r&&r.value)ratings.push(JSON.parse(r.value))}catch(e){}}}catch(e){ratings=[]}const total=ratings.length,avg=total>0?ratings.reduce((s,r)=>s+r.stars,0)/total:0,dist=[0,0,0,0,0];ratings.forEach(r=>{if(r.stars>=1&&r.stars<=5)dist[r.stars-1]++});stats.innerHTML='<div class="text-center"><div class="text-base font-bold text-amber-400">'+avg.toFixed(1)+'</div><div class="text-[8px] text-slate-400">المتوسط</div></div><div class="text-center"><div class="text-base font-bold text-amber-400">'+total+'</div><div class="text-[8px] text-slate-400">التقييمات</div></div><div class="text-center col-span-2"><div class="flex items-center gap-1 justify-center text-[9px]">'+[5,4,3,2,1].map(n=>n+"★ "+dist[n-1]).join(" | ")+'</div></div>';const hist=document.getElementById("ratingHistoryList");if(hist){if(ratings.length===0){hist.innerHTML='<div class="text-xs text-slate-500">لا توجد تقييمات</div>'}else{const ids=ratings.map(r=>r.recipeId),names={};for(const id of ids){try{const r=await window.storage.get("recipe:"+id);if(r&&r.value){const d=JSON.parse(r.value);names[id]=d.name||id}}catch(e){}}hist.innerHTML=ratings.slice().reverse().map(r=>'<div class="bg-slate-950 border border-slate-800 rounded-xl p-1.5 text-xs"><div class="flex items-center justify-between"><span class="font-bold text-amber-400">'+("★".repeat(r.stars))+'</span><span class="text-slate-500 text-[10px]">'+(names[r.recipeId]||r.recipeId)+'</span></div>'+(r.comment?'<div class="text-slate-300 text-[10px] mt-0.5">💬 '+sanitize(r.comment)+"</div>":"")+'<div class="text-[8px] text-slate-500 mt-0.5">'+new Date(r.ratedAt).toLocaleDateString()+"</div></div>").join("")}}}
+
+// ================================================================
+// COMPARE
+// ================================================================
+async function populateCompareSelects(){const a=document.getElementById("compareSelectA"),b=document.getElementById("compareSelectB");if(!a||!b)return;let recipes=[];try{const result=await window.storage.list("recipe:"),keys=result&&result.keys||[];for(const k of keys){try{const r=await window.storage.get(k);if(r&&r.value)recipes.push(JSON.parse(r.value))}catch(e){}}}catch(e){recipes=[]}recipes.sort((x,y)=>(y.savedAt||"").localeCompare(x.savedAt||""));compareRecipesCache=recipes;if(recipes.length<2){a.innerHTML="";b.innerHTML="";document.getElementById("compareResultBox").innerHTML='<p class="text-xs text-slate-500 pt-1">احفظ وصفتين</p>';return}const opts=recipes.map(r=>'<option value="'+r.id+'">'+sanitize(r.name)+"</option>").join("");a.innerHTML=opts;b.innerHTML=opts;a.value=recipes[0].id;b.value=recipes[1].id}
+function computeRecipeMetrics(recipe){const tw=1000,totals={hardness:0,cleansing:0,conditioning:0,bubbly:0,creamy:0,iodine:0,ins:0},type=recipe.soapType||"NaOH",sf=(parseFloat(recipe.superfat)||0)/100;let lye=0;(recipe.oils||[]).forEach(i=>{const oil=getOilObj(i.key);if(oil){const pct=(i.percentage||0)/100;totals.hardness+=(oil.hardness||0)*pct;totals.cleansing+=(oil.cleansing||0)*pct;totals.conditioning+=(oil.conditioning||0)*pct;totals.bubbly+=(oil.bubbly||0)*pct;totals.creamy+=(oil.creamy||0)*pct;totals.iodine+=(oil.iodine||0)*pct;totals.ins+=(oil.ins||0)*pct;const w=(tw*(i.percentage||0))/100,sap=type==="KOH"?oil.koh:oil.sap;lye+=w*sap}});lye=lye*(1-sf);const oc=(recipe.oils||[]).reduce((s,i)=>{const w=(tw*(i.percentage||0))/100;return s+(w*(i.price||0))/1000},0),ac=(recipe.additives||[]).reduce((s,i)=>s+((i.weight||0)*(i.price||0))/1000,0),gt=oc+ac,bw=parseFloat(recipe.barWeight)||100,tbw=tw+lye+(recipe.additives||[]).reduce((s,a)=>s+(a.weight||0),0),cpb=tbw>0?(gt/tbw)*bw:0;return{totals,grandTotal:gt,costPerBar:cpb}}
+function renderComparison(){const box=document.getElementById("compareResultBox");if(!box)return;const a=document.getElementById("compareSelectA"),b=document.getElementById("compareSelectB");if(!a||!a.value||!b||!b.value)return;const ra=compareRecipesCache.find(r=>r.id===a.value),rb=compareRecipesCache.find(r=>r.id===b.value);if(!ra||!rb)return;if(a.value===b.value){box.innerHTML='<p class="text-xs text-amber-400 pt-1">اختر وصفتين مختلفتين</p>';return}const ma=computeRecipeMetrics(ra),mb=computeRecipeMetrics(rb),rows=[{label:"الصلابة",a:Math.round(ma.totals.hardness),b:Math.round(mb.totals.hardness)},{label:"التنظيف",a:Math.round(ma.totals.cleansing),b:Math.round(mb.totals.cleansing)},{label:"الترطيب",a:Math.round(ma.totals.conditioning),b:Math.round(mb.totals.conditioning)},{label:"الرغوة",a:Math.round(ma.totals.bubbly),b:Math.round(mb.totals.bubbly)},{label:"الكريمية",a:Math.round(ma.totals.creamy),b:Math.round(mb.totals.creamy)},{label:"اليود",a:Math.round(ma.totals.iodine),b:Math.round(mb.totals.iodine)},{label:"INS",a:Math.round(ma.totals.ins),b:Math.round(mb.totals.ins)}];const rowHtml=(l,x,y)=>{const xw=x>y,yw=y>x;return'<div class="grid grid-cols-3 items-center text-[10px] py-0.5 border-b border-slate-800/60"><span class="font-bold text-right '+(xw?"text-emerald-400":"text-slate-300")+'">'+x+'</span><span class="text-slate-400 text-center text-[8px]">'+l+'</span><span class="font-bold text-left '+(yw?"text-emerald-400":"text-slate-300")+'">'+y+"</span></div>"};let html=rows.map(r=>rowHtml(r.label,r.a,r.b)).join("");html+=rowHtml("التكلفة",formatCurrency(ma.grandTotal),formatCurrency(mb.grandTotal));html+=rowHtml("تكلفة القالب",formatCurrency(ma.costPerBar),formatCurrency(mb.costPerBar));box.innerHTML='<div class="grid grid-cols-2 gap-2 pt-1.5 pb-0.5"><div class="text-center text-[10px] font-bold text-amber-400 truncate">'+sanitize(ra.name)+'</div><div class="text-center text-[10px] font-bold text-amber-400 truncate">'+sanitize(rb.name)+'</div></div><div class="bg-slate-950 border border-slate-800 rounded-xl p-1.5">'+html+'</div><p class="text-[8px] text-slate-500 pt-0.5">🟢 الأخضر = الأفضل</p>'}
+
+// ================================================================
+// CURING
+// ================================================================
+async function addCuringBatch(){const name=sanitize(document.getElementById("curingNameInput").value),date=document.getElementById("curingDateInput").value,dur=parseInt(document.getElementById("curingDurationInput").value)||35;if(!name||!date){showCuringStatus("⚠️ أدخل اسم وتاريخ",true);return}const batch={id:"batch_"+Date.now(),name,productionDate:date,durationDays:dur,count:document.getElementById("curingCountInput").value||"",createdAt:new Date().toISOString()};try{await window.storage.set("batch:"+batch.id,JSON.stringify(batch));document.getElementById("curingNameInput").value="";document.getElementById("curingCountInput").value="";document.getElementById("curingDurationInput").value=35;document.getElementById("curingDateInput").value="";showCuringStatus("✅ تم التسجيل",false);loadCuringBatches()}catch(e){showCuringStatus("⚠️ فشل الحفظ",true)}}
+function showCuringStatus(msg,err){const el=document.getElementById("curingStatus");if(!el)return;el.classList.remove("hidden");el.className="text-xs "+(err?"text-red-400":"text-emerald-400");el.textContent=msg;setTimeout(()=>el.classList.add("hidden"),3000)}
+async function loadCuringBatches(){const list=document.getElementById("curingBatchesList");if(!list)return;let keys=[];try{const r=await window.storage.list("batch:");keys=r&&r.keys||[]}catch(e){keys=[]}if(keys.length===0){list.innerHTML='<p class="text-xs text-slate-500">لا توجد دفعات</p>';return}const batches=[];for(const k of keys){try{const r=await window.storage.get(k);if(r&&r.value)batches.push(JSON.parse(r.value))}catch(e){}}const now=new Date();batches.forEach(b=>{const start=new Date(b.productionDate),ready=new Date(start.getTime()+(b.durationDays||35)*86400000);b._readyDate=ready;b._daysLeft=Math.ceil((ready-now)/86400000);b._elapsedPct=Math.min(100,Math.max(0,Math.round(((now-start)/(ready-start))*100)))});batches.sort((x,y)=>x._daysLeft-y._daysLeft);list.innerHTML=batches.map(b=>{const ready=b._daysLeft<=0,text=ready?"✅ جاهزة!":"⏳ "+b._daysLeft+" يوم";return'<div class="bg-slate-950 border border-slate-800 rounded-xl p-1.5 space-y-0.5"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-200">'+sanitize(b.name)+(b.count?" — "+b.count+" قطعة":"")+'</span><button onclick="deleteCuringBatch(\''+b.id+'\')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button></div><div class="progress-bar"><div class="fill" style="width:'+b._elapsedPct+'%"></div></div><div class="flex items-center justify-between text-[8px] text-slate-500"><span>صُنعت: '+b.productionDate+'</span><span>جاهزة: '+b._readyDate.toISOString().slice(0,10)+'</span></div><div class="text-[10px] font-bold '+(ready?"text-emerald-400":"text-amber-300")+'">'+text+"</div></div>"}).join("")}
+async function deleteCuringBatch(id){try{await window.storage.delete("batch:"+id);loadCuringBatches()}catch(e){}}
+
+// ================================================================
+// SAVE & BACKUP
+// ================================================================
+function showSaveStatus(msg,err){const el=document.getElementById("saveRecipeStatus");if(!el)return;el.classList.remove("hidden");el.className="text-xs "+(err?"text-red-400":"text-emerald-400");el.textContent=msg;setTimeout(()=>el.classList.add("hidden"),3000)}
+async function saveCurrentRecipe(){const name=sanitize(document.getElementById("saveRecipeName").value);if(!name){showSaveStatus("⚠️ أدخل اسم الوصفة",true);return}const id="recipe_"+Date.now(),recipe={id,name,oils:recipeOils.map(o=>({...o})),additives:recipeAdditives.map(a=>({...a})),soapType:document.getElementById("soapTypeSelect").value,superfat:document.getElementById("superfatInput").value,waterRatio:document.getElementById("waterRatioInput").value,waterMethod:document.getElementById("waterMethodSelect").value,lyeConcentration:document.getElementById("lyeConcentrationInput").value,barWeight:"100",lyePrice:"0",savedAt:new Date().toISOString()};try{await window.storage.set("recipe:"+id,JSON.stringify(recipe));document.getElementById("saveRecipeName").value="";showSaveStatus("✅ تم الحفظ",false);loadSavedRecipesList();populateRatingSelects();populateCompareSelects()}catch(e){showSaveStatus("⚠️ فشل الحفظ",true)}}
+async function loadSavedRecipesList(){const list=document.getElementById("savedRecipesList");if(!list)return;let keys=[];try{const r=await window.storage.list("recipe:");keys=r&&r.keys||[]}catch(e){keys=[]}if(keys.length===0){list.innerHTML='<p class="text-xs text-slate-500">لا توجد وصفات</p>';return}const recipes=[];for(const k of keys){try{const r=await window.storage.get(k);if(r&&r.value)recipes.push(JSON.parse(r.value))}catch(e){}}recipes.sort((a,b)=>(b.savedAt||"").localeCompare(a.savedAt||""));list.innerHTML=recipes.map(r=>'<div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl px-1.5 py-1"><span class="text-xs font-bold text-slate-200 truncate">'+sanitize(r.name)+'</span><div class="flex gap-1"><button onclick="loadSavedRecipe(\''+r.id+'\')" class="text-emerald-400 hover:text-emerald-300 text-[10px] font-bold">فتح</button><button onclick="deleteSavedRecipe(\''+r.id+'\')" class="text-red-400 hover:text-red-300 text-[10px] font-bold">✕</button></div></div>').join("")}
+async function loadSavedRecipe(id){try{const r=await window.storage.get("recipe:"+id);if(!r||!r.value)return;const recipe=JSON.parse(r.value);recipeOils=recipe.oils||[];recipeAdditives=recipe.additives||[];document.getElementById("soapTypeSelect").value=recipe.soapType||"NaOH";document.getElementById("superfatInput").value=recipe.superfat||5;document.getElementById("waterRatioInput").value=recipe.waterRatio||38;document.getElementById("waterMethodSelect").value=recipe.waterMethod||"ratio";document.getElementById("lyeConcentrationInput").value=recipe.lyeConcentration||33;toggleWaterMethod();renderOilsTable();renderAdditivesTable();switchTab("calculator")}catch(e){showSaveStatus("⚠️ فشل التحميل",true)}}
+async function deleteSavedRecipe(id){try{await window.storage.delete("recipe:"+id);loadSavedRecipesList();populateRatingSelects();populateCompareSelects()}catch(e){}}
+async function exportBackup(){try{const backup={recipes:[],batches:[],ratings:[],tempHistory:tempHistory,settings:{weightUnit,currencySymbol,exchangeRate},exportedAt:new Date().toISOString()};const rr=await window.storage.list("recipe:");for(const k of(rr&&rr.keys||[])){const r=await window.storage.get(k);if(r&&r.value)backup.recipes.push(JSON.parse(r.value))}const br=await window.storage.list("batch:");for(const k of(br&&br.keys||[])){const r=await window.storage.get(k);if(r&&r.value)backup.batches.push(JSON.parse(r.value))}const rrr=await window.storage.list("rating:");for(const k of(rrr&&rrr.keys||[])){const r=await window.storage.get(k);if(r&&r.value)backup.ratings.push(JSON.parse(r.value))}const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="norine-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);showSaveStatus("✅ تم التصدير",false)}catch(e){showSaveStatus("⚠️ فشل التصدير",true)}}
+
+// ================================================================
+// AI
+// ================================================================
+function getRecipeMetrics(){const totals={hardness:0,cleansing:0,conditioning:0,bubbly:0,creamy:0,iodine:0,ins:0};recipeOils.forEach(i=>{const oil=getOilObj(i.key);if(oil){const pct=(i.percentage||0)/100;totals.hardness+=(oil.hardness||0)*pct;totals.cleansing+=(oil.cleansing||0)*pct;totals.conditioning+=(oil.conditioning||0)*pct;totals.bubbly+=(oil.bubbly||0)*pct;totals.creamy+=(oil.creamy||0)*pct;totals.iodine+=(oil.iodine||0)*pct;totals.ins+=(oil.ins||0)*pct}});return{totals}}
+function generateAdvancedAiAnalysis(){const m=getRecipeMetrics();const s=[],st=[],c=[];if(m.totals.hardness<29){s.push("🔹 أضف زبدة الشيا");c.push("الصلابة منخفضة")}else if(m.totals.hardness>54){s.push("🔹 قلل جوز الهند");c.push("الصلابة مرتفعة")}else{st.push("✅ الصلابة مثالية")}if(m.totals.cleansing>22){s.push("🔹 قلل جوز الهند");c.push("التنظيف مرتفع")}else if(m.totals.cleansing<12){s.push("🔹 أضف جوز الهند");c.push("التنظيف منخفض")}else{st.push("✅ التنظيف متوازن")}if(m.totals.conditioning<44){s.push("🔹 أضف زيت الزيتون");c.push("الترطيب منخفض")}else if(m.totals.conditioning>69){st.push("✅ ترطيب ممتاز")}else{st.push("✅ الترطيب جيد")}let skin="جميع الأنواع";if(m.totals.cleansing>20&&m.totals.conditioning<50)skin="البشرة الدهنية";else if(m.totals.conditioning>60&&m.totals.cleansing<18)skin="البشرة الجافة";let html='<div class="space-y-1.5">';html+='<div class="flex items-center gap-1.5 '+(st.length>=3?'text-emerald-400':'text-amber-400')+' text-[10px]">'+(st.length>=3?'✅':'⚠️')+' <strong>التقييم:</strong> '+(st.length>=3?'ممتازة!':'تحتاج تحسينات')+'</div>';if(st.length)html+='<div class="text-emerald-300 text-[10px]"><strong>💪 نقاط القوة:</strong><ul class="list-disc list-inside text-slate-300 text-[9px]">'+st.map(x=>"<li>"+x+"</li>").join("")+'</ul></div>';if(c.length)html+='<div class="text-amber-300 text-[10px]"><strong>⚠️ ملاحظات:</strong><ul class="list-disc list-inside text-slate-300 text-[9px]">'+c.map(x=>"<li>"+x+"</li>").join("")+'</ul></div>';if(s.length)html+='<div class="text-sky-300 text-[10px]"><strong>💡 اقتراحات:</strong><ul class="list-disc list-inside text-slate-300 text-[9px]">'+s.map(x=>"<li>"+x+"</li>").join("")+'</ul></div>';html+='<div class="text-pink-300 text-[10px]"><strong>👤 الأنسب لبشرة:</strong> <span class="text-slate-300">'+skin+'</span></div>';html+='</div>';return html}
+async function runAiAnalysis(){const res=document.getElementById("aiAnalysisResult"),load=document.getElementById("aiAnalysisLoading"),btn=document.querySelector("#tabContent-ai .bg-amber-600");if(!res)return;load.classList.remove("hidden");res.classList.add("hidden");if(btn)btn.disabled=true;await new Promise(r=>setTimeout(r,400+Math.random()*400));try{res.innerHTML=generateAdvancedAiAnalysis();res.classList.remove("hidden")}catch(e){res.innerHTML='<div class="text-red-400 text-xs">⚠️ حدث خطأ</div>';res.classList.remove("hidden")}finally{load.classList.add("hidden");if(btn)btn.disabled=false}}
+async function runAiGenerate(){const input=document.getElementById("aiPromptInput"),res=document.getElementById("aiGeneratedRecipe"),load=document.getElementById("aiGenerateLoading"),btn=document.getElementById("btnAiGenerate");if(!input||!res)return;const prompt=sanitize(input.value);if(!prompt){showSaveStatus("⚠️ أدخل وصفاً",true);return}load.classList.remove("hidden");res.classList.add("hidden");if(btn)btn.disabled=true;await new Promise(r=>setTimeout(r,500+Math.random()*500));try{const kw=prompt.toLowerCase(),oils=[];oils.push({key:"olive",percentage:30});oils.push({key:"coconut",percentage:20});oils.push({key:"shea",percentage:10});oils.push({key:"argan",percentage:10});oils.push({key:"castor",percentage:8});oils.push({key:"almond",percentage:12});const total=oils.reduce((s,o)=>s+o.percentage,0);if(total>100){const r=100/total;oils.forEach(o=>o.percentage=Math.round(o.percentage*r))}const adds=[];const oilsList=oils.map(o=>getOilName(o.key)+": "+o.percentage+"%").join(", ");res.innerHTML='<div class="bg-slate-950 border border-emerald-800 rounded-xl p-2 space-y-1"><div class="text-emerald-400 font-bold text-[10px]">✅ تم توليد وصفة</div><div class="text-slate-300 text-[9px]"><strong>🌿 الزيوت:</strong> '+oilsList+'</div><button onclick="applyGeneratedRecipe('+JSON.stringify(oils)+')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[9px] px-2.5 py-0.5 rounded-xl transition">✅ تطبيق</button></div>';res.classList.remove("hidden");input.value=""}catch(e){res.innerHTML='<div class="text-red-400 text-xs">⚠️ حدث خطأ</div>';res.classList.remove("hidden")}finally{load.classList.add("hidden");if(btn)btn.disabled=false}}
+function applyGeneratedRecipe(oils){recipeOils=oils.map(o=>({...o,price:0}));renderOilsTable();renderAdditivesTable();switchTab("calculator");showSaveStatus("✅ تم تطبيق الوصفة!",false)}
+
+// ================================================================
+// INIT
+// ================================================================
+window.onload=async function(){await loadGlobalSettings();const d=document.getElementById("curingDateInput");if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);renderOilsTable();renderAdditivesTable();loadSavedRecipesList();loadCuringBatches();populateRatingSelects();populateCompareSelects();calculateTemperature();renderAdditiveSelect();renderLibrary();calculatePH();calculateFragrance()};
+</script>
+</body>
+</html>
